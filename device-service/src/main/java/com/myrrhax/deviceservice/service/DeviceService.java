@@ -2,6 +2,7 @@ package com.myrrhax.deviceservice.service;
 
 import com.myrrhax.deviceservice.dto.DeviceDto;
 import com.myrrhax.deviceservice.dto.request.CreateDeviceRequest;
+import com.myrrhax.deviceservice.dto.request.UpdateDeviceRequest;
 import com.myrrhax.deviceservice.entity.Device;
 import com.myrrhax.deviceservice.exception.DeviceNotFoundException;
 import com.myrrhax.deviceservice.mapper.DeviceMapper;
@@ -33,6 +34,17 @@ public class DeviceService {
         Device device = deviceMapper.toEntity(deviceDto);
         Device savedDevice = deviceRepository.save(device);
 
+        return deviceMapper.toDto(savedDevice);
+    }
+
+    @Transactional
+    public DeviceDto updateDevice(Long id, UpdateDeviceRequest deviceDto) {
+        Device device = getDevice(id);
+        device.setName(deviceDto.name());
+        device.setType(deviceDto.type());
+        device.setLocation(deviceDto.location());
+
+        Device savedDevice = deviceRepository.save(device);
         return deviceMapper.toDto(savedDevice);
     }
 }
