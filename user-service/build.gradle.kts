@@ -8,6 +8,11 @@ group = "com.myrrhax"
 version = "0.0.1-SNAPSHOT"
 description = "user-service"
 
+val versions = mapOf(
+    "mapstruct" to "1.6.3",
+    "mapstruct-binding" to "0.2.0"
+)
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -23,16 +28,24 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("org.postgresql:postgresql")
+    implementation("org.mapstruct:mapstruct:${versions["mapstruct"]}")
 
     compileOnly("org.projectlombok:lombok")
+
+    runtimeOnly("org.postgresql:postgresql")
+
     annotationProcessor("org.projectlombok:lombok")
+    annotationProcessor("org.mapstruct:mapstruct-processor:${versions["mapstruct"]}")
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:${versions["mapstruct-binding"]}")
 
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+
     testCompileOnly("org.projectlombok:lombok")
+
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     testAnnotationProcessor("org.projectlombok:lombok")
 }
 
