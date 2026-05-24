@@ -2,6 +2,7 @@ package com.myrrhax.userservice.service;
 
 import com.myrrhax.userservice.dto.UserDto;
 import com.myrrhax.userservice.dto.request.CreateUserRequest;
+import com.myrrhax.userservice.dto.request.UpdateUserRequest;
 import com.myrrhax.userservice.entity.User;
 import com.myrrhax.userservice.exception.ApplicationException;
 import com.myrrhax.userservice.exception.UserNotFoundException;
@@ -35,11 +36,30 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
+    @Transactional(readOnly = true)
     public UserDto getUser(Long id) {
         log.info("Retrieving user with id {}", id);
 
+        return userMapper.toDto(getUserEntity(id));
+    }
+
+    @Transactional
+    public UserDto updateUser(Long id, UpdateUserRequest dto) {
+        log.info("Updating user with id {}", id);
+        User user = getUserEntity(id);
+
+        user.setName(dto.name());
+        user.setSurname(dto.surname());
+        user.setEmail(dto.email());
+        user.setAddress(dto.address());
+        user.setAlerting(dto.alerting());
+        user.setEnergyAlertingThreshold(dto.energyAlertingThreshold());
+
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+    private User getUserEntity(Long id) {
         return userRepository.findById(id)
-                .map(userMapper::toDto)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 }
