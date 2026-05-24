@@ -1,0 +1,30 @@
+package com.myrrhax.deviceservice.controller;
+
+import com.myrrhax.deviceservice.dto.DeviceDto;
+import com.myrrhax.deviceservice.service.DeviceService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("api/v1/device")
+@RequiredArgsConstructor
+public class DeviceController {
+    private final DeviceService deviceService;
+
+    @PostMapping
+    public void createDevice() {
+
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<DeviceDto> getDevice(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                deviceService.findById(id)
+        );
+    }
+}
