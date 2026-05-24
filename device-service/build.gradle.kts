@@ -8,6 +8,11 @@ group = "com.myrrhax"
 version = "0.0.1-SNAPSHOT"
 description = "device-service"
 
+val versions = mapOf(
+    "mapstruct" to "1.6.3",
+    "mapstruct-binding" to "0.2.0"
+)
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -21,9 +26,16 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.mapstruct:mapstruct:${versions["mapstruct"]}")
+
     compileOnly("org.projectlombok:lombok")
+
     runtimeOnly("org.postgresql:postgresql")
+
     annotationProcessor("org.projectlombok:lombok")
+    annotationProcessor("org.mapstruct:mapstruct-processor:${versions["mapstruct"]}")
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:${versions["mapstruct-binding"]}")
+
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testCompileOnly("org.projectlombok:lombok")
