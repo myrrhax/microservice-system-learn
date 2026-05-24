@@ -22,8 +22,6 @@ public class UserService {
 
     @Transactional
     public UserDto createUser(CreateUserRequest dto) {
-        log.info("Creating user with email {}", dto.email());
-
         if (userRepository.existsByEmail(dto.email())) {
             log.warn("User with email {} already exists", dto.email());
 
@@ -38,14 +36,11 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserDto getUser(Long id) {
-        log.info("Retrieving user with id {}", id);
-
         return userMapper.toDto(getUserEntity(id));
     }
 
     @Transactional
     public UserDto updateUser(Long id, UpdateUserRequest dto) {
-        log.info("Updating user with id {}", id);
         User user = getUserEntity(id);
 
         user.setName(dto.name());
@@ -64,7 +59,6 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        log.info("Deleting user with id {}", id);
         userRepository.deleteById(id);
     }
 }
