@@ -6,6 +6,7 @@ import com.myrrhax.deviceservice.dto.request.UpdateDeviceRequest;
 import com.myrrhax.deviceservice.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,5 +46,13 @@ public class DeviceController {
         return ResponseEntity.ok(
                 deviceService.updateDevice(id, deviceDto)
         );
+    }
+
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<Void> deleteDevice(@PathVariable Long id) {
+        deviceService.deleteDevice(id);
+
+        return ResponseEntity.noContent().build();
     }
 }

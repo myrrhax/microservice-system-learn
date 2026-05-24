@@ -47,4 +47,10 @@ public class DeviceService {
         Device savedDevice = deviceRepository.save(device);
         return deviceMapper.toDto(savedDevice);
     }
+
+    @Transactional
+    public void deleteDevice(Long id) {
+        Device device = getDevice(id);
+        deviceRepository.delete(device);
+    }
 }
