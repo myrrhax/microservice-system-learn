@@ -62,4 +62,9 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
+
+    public void deleteUser(Long id) {
+        log.info("Deleting user with id {}", id);
+        userRepository.deleteById(id);
+    }
 }
