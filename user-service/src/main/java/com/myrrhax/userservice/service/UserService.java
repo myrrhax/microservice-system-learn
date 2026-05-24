@@ -4,6 +4,7 @@ import com.myrrhax.userservice.dto.UserDto;
 import com.myrrhax.userservice.dto.request.CreateUserRequest;
 import com.myrrhax.userservice.entity.User;
 import com.myrrhax.userservice.exception.ApplicationException;
+import com.myrrhax.userservice.exception.UserNotFoundException;
 import com.myrrhax.userservice.mapper.UserMapper;
 import com.myrrhax.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,5 +33,13 @@ public class UserService {
         userRepository.save(user);
 
         return userMapper.toDto(user);
+    }
+
+    public UserDto getUser(Long id) {
+        log.info("Retrieving user with id {}", id);
+
+        return userRepository.findById(id)
+                .map(userMapper::toDto)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 }
