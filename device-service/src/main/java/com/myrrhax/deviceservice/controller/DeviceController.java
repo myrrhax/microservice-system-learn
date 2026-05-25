@@ -21,11 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class DeviceController {
     private final DeviceService deviceService;
 
-    @PostMapping
-    public void createDevice() {
-
-    }
-
     @GetMapping("{id}")
     public ResponseEntity<DeviceDto> getDevice(@PathVariable Long id) {
         return ResponseEntity.ok(

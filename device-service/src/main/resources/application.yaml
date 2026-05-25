@@ -16,3 +16,8 @@ spring:
     hibernate:
       ddl-auto: validate
       dialect: org.hibernate.dialect.PostgresSQLDialect
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
