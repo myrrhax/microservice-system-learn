@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,12 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Device {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "device_seq")
+    @SequenceGenerator(
+            name = "device_seq",
+            sequenceName = "device_seq",
+            allocationSize = 100
+    )
     private Long id;
 
     private String name;
