@@ -16,3 +16,6 @@ app:
     token: admin-token
     org: microservice-learn
     bucket: usage-bucket
+
+  client:
+    device-url: http://localhost:8081/api/v1/device
