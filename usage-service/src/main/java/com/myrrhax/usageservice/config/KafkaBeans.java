@@ -65,6 +65,7 @@ public class KafkaBeans {
         );
     }
 
+    @Bean
     public KafkaTemplate<String, Object> dltKafkaTemplate(ProducerFactory<String, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
