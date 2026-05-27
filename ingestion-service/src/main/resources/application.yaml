@@ -7,3 +7,8 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9094
+
+app:
+  simulation:
+    requests-per-interval: 50
+    interval-ms: 5000

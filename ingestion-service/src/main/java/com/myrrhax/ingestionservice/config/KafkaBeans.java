@@ -40,7 +40,7 @@ public class KafkaBeans {
         config.put(ProducerConfig.ACKS_CONFIG, "all");
         config.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 10000);
         config.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000);
-        config.put(ProducerConfig.LINGER_MS_CONFIG, 0);
+        config.put(ProducerConfig.LINGER_MS_CONFIG, 1000);
         config.put(JacksonJsonSerializer.TYPE_MAPPINGS,
                 "energy-duration:com.myrrhax.ingestionservice.event.EnergyUsageEvent");
 
