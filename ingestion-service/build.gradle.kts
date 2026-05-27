@@ -21,6 +21,10 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-kafka")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+
+    implementation("org.springframework.boot:spring-boot-starter-json")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-kafka-test")
