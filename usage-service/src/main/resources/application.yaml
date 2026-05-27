@@ -1,3 +1,11 @@
+server:
+  port: 8083
+
 spring:
   application:
     name: usage-service
+
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: usage-service
