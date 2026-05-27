@@ -8,6 +8,10 @@ group = "com.myrrhax"
 version = "0.0.1-SNAPSHOT"
 description = "usage-service"
 
+val versions = mapOf(
+    "influxdb" to "6.12.0"
+)
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -23,7 +27,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
     implementation("org.springframework.boot:spring-boot-starter-json")
+    implementation("com.influxdb:influxdb-client-java:${versions["influxdb"]}")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

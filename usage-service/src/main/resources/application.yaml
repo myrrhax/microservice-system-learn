@@ -9,3 +9,10 @@ spring:
     bootstrap-servers: localhost:9094
     consumer:
       group-id: usage-service
+
+app:
+  influx:
+    url: http://localhost:8072
+    token: admin-token
+    org: microservice-learn
+    bucket: usage-bucket
