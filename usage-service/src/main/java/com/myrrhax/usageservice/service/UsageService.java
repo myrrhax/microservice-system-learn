@@ -20,6 +20,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -48,9 +49,11 @@ public class UsageService {
     private final InfluxConnection influxConn;
     private final DeviceClient deviceClient;
     private final UserClient userClient;
+    private final KafkaTemplate<String, AlertingEvent> kafkaTemplate;
 
     @Value("${app.consumption-interval:1}")
     private long energyConsumptionIntervalHours;
+
 
     @KafkaHandler
     public void handleEnergyUsageEvent(EnergyUsageEvent energyUsageEvent) {
@@ -68,28 +71,10 @@ public class UsageService {
     public void aggregateDeviceEnergyUsage() throws ExecutionException, InterruptedException {
         List<FluxTable> tables = getLastEnergyConsumptionsGrouped(energyConsumptionIntervalHours);
         List<DeviceEnergy> deviceConsumptions = getDeviceConsumptions(tables);
+        fetchDeviceInfo(deviceConsumptions);
 
-        // ToDo: Add batching
-        List<CompletableFuture<Void>> futures = new LinkedList<>();
-        for (DeviceEnergy deviceEnergy: deviceConsumptions) {
-            futures.add(
-                    deviceClient.getDeviceById(deviceEnergy.getDeviceId())
-                        .exceptionally(e -> {
-                            log.error("Failed to fetch device with id {}", deviceEnergy.getDeviceId(), e);
-                            return Optional.empty();
-                        })
-                        .thenAccept(deviceOpt -> {
-                            deviceOpt.ifPresent(deviceDto -> deviceEnergy.setUserId(deviceDto.userId()));
-                        })
-            );
-        }
-
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .join();
-        deviceConsumptions.removeIf(deviceEnergy -> deviceEnergy.getUserId() == null);
         Map<Long, List<DeviceEnergy>> userDeviceEnergyMap = deviceConsumptions.stream()
                 .collect(Collectors.groupingBy(DeviceEnergy::getUserId));
-
         log.info("User energies: {}", userDeviceEnergyMap);
 
         // Get user's energy consumption threshold
@@ -97,6 +82,32 @@ public class UsageService {
         Map<Long, Double> userThresholdsMap = new HashMap<>();
         Map<Long, String> userEmailsMap = new HashMap<>();
 
+        fetchUserInfo(userIds, userThresholdsMap, userEmailsMap);
+
+        // Check thresholds
+        List<Long> alertedUsers = new ArrayList<>(userThresholdsMap.keySet());
+
+        for (Long userId: alertedUsers) {
+            double threshold = userThresholdsMap.get(userId);
+            double consumedEnergy = userDeviceEnergyMap.get(userId).stream()
+                    .mapToDouble(DeviceEnergy::getEnergyConsumed)
+                    .sum();
+            if (consumedEnergy > threshold) {
+                log.info("ALERT: user {} has exceeded the energy threshold. Total consumption is {}, Threshold is {}",
+                        userId, threshold, consumedEnergy);
+                AlertingEvent event = new AlertingEvent(
+                        userId,
+                        THRESHOLD_EXCEEDED_MESSAGE_PATTERN,
+                        threshold,
+                        consumedEnergy,
+                        userEmailsMap.get(userId)
+                );
+                kafkaTemplate.send("energy-alerts", event);
+            }
+        }
+    }
+
+    private void fetchUserInfo(List<Long> userIds, Map<Long, Double> userThresholdsMap, Map<Long, String> userEmailsMap) throws InterruptedException, ExecutionException {
         List<CompletableFuture<Optional<UserDto>>> userFetchFutures = new LinkedList<>();
         for (Long userId: userIds) {
             userFetchFutures.add(
@@ -122,27 +133,27 @@ public class UsageService {
             userThresholdsMap.put(user.id(), user.energyAlertingThreshold());
             userEmailsMap.put(user.id(), user.email());
         }
+    }
 
-        // Check thresholds
-        List<Long> alertedUsers = new ArrayList<>(userThresholdsMap.keySet());
-
-        for (Long userId: alertedUsers) {
-            double threshold = userThresholdsMap.get(userId);
-            double consumedEnergy = userDeviceEnergyMap.get(userId).stream()
-                    .mapToDouble(DeviceEnergy::getEnergyConsumed)
-                    .sum();
-            if (consumedEnergy > threshold) {
-                log.info("ALERT: user {} has exceeded the energy threshold. Total consumption is {}, Threshold is {}",
-                        userId, threshold, consumedEnergy);
-                AlertingEvent event = new AlertingEvent(
-                        userId,
-                        THRESHOLD_EXCEEDED_MESSAGE_PATTERN,
-                        threshold,
-                        consumedEnergy,
-                        userEmailsMap.get(userId)
-                );
-            }
+    private void fetchDeviceInfo(List<DeviceEnergy> deviceConsumptions) {
+        // ToDo: Add batching
+        List<CompletableFuture<Void>> futures = new LinkedList<>();
+        for (DeviceEnergy deviceEnergy: deviceConsumptions) {
+            futures.add(
+                    deviceClient.getDeviceById(deviceEnergy.getDeviceId())
+                        .exceptionally(e -> {
+                            log.error("Failed to fetch device with id {}", deviceEnergy.getDeviceId(), e);
+                            return Optional.empty();
+                        })
+                        .thenAccept(deviceOpt -> {
+                            deviceOpt.ifPresent(deviceDto -> deviceEnergy.setUserId(deviceDto.userId()));
+                        })
+            );
         }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .join();
+        deviceConsumptions.removeIf(deviceEnergy -> deviceEnergy.getUserId() == null);
     }
 
     private static @NonNull List<DeviceEnergy> getDeviceConsumptions(List<FluxTable> tables) {
@@ -176,7 +187,7 @@ public class UsageService {
         """, influxConn.bucket(), hourAgo.toString(), now);
 
         QueryApi queryApi = influx.getQueryApi();
-        List<FluxTable> tables = queryApi.query(fluxQuery, influxConn.org());
-        return tables;
+
+        return queryApi.query(fluxQuery, influxConn.org());
     }
 }
