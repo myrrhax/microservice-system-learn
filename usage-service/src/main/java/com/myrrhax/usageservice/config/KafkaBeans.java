@@ -1,5 +1,6 @@
 package com.myrrhax.usageservice.config;
 
+import com.myrrhax.usageservice.event.AlertingEvent;
 import com.myrrhax.usageservice.event.EnergyUsageEvent;
 import com.myrrhax.usageservice.exception.ApplicationException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -47,38 +48,45 @@ public class KafkaBeans {
     }
 
     @Bean
-    public ProducerFactory<String, Object> dltProducerFactory(KafkaProperties kafkaProperties) {
+    public ProducerFactory<String, Object> producerFactory(KafkaProperties kafkaProperties) {
         var config = new HashMap<String, Object>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
         config.put(ProducerConfig.ACKS_CONFIG, "all");
         config.put(ProducerConfig.RETRIES_CONFIG, 10);
+        config.put(JacksonJsonSerializer.TYPE_MAPPINGS,
+                "energy-duration:com.myrrhax.usageservice.event.EnergyUsageEvent," +
+                "alerting-event:com.myrrhax.usageservice.event.AlertingEvent");
+
+        var serializer = new JacksonJsonSerializer<>();
+        serializer.configure(config, false);
 
         return new DefaultKafkaProducerFactory<>(
                 config,
                 new StringSerializer(),
                 new DelegatingByTypeSerializer(Map.of(
                         byte[].class, new ByteArraySerializer(),
-                        EnergyUsageEvent.class, new JacksonJsonSerializer<>()
+                        EnergyUsageEvent.class, serializer,
+                        AlertingEvent.class, serializer
                 ))
         );
     }
 
     @Bean
-    public KafkaTemplate<String, Object> dltKafkaTemplate(ProducerFactory<String, Object> producerFactory) {
+    public KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, EnergyUsageEvent> kafkaListenerContainerFactory(
             ConsumerFactory<String, EnergyUsageEvent> consumerFactory,
-            KafkaTemplate<String, Object> dltKafkaTemplate
+            KafkaTemplate<String, Object> kafkaTemplate
     ) {
         var container = new ConcurrentKafkaListenerContainerFactory<String, EnergyUsageEvent>();
         container.setConsumerFactory(consumerFactory);
 
-        DeadLetterPublishingRecoverer dltRecoverer = new DeadLetterPublishingRecoverer(dltKafkaTemplate,
+        DeadLetterPublishingRecoverer dltRecoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
                 (record, ex) -> new TopicPartition(
                         record.topic() + ".DLT",
                         record.partition()
