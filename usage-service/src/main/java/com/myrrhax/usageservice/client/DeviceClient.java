@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public class DeviceClient {
     private final RestTemplate restTemplate;
 
-    @Value("app.client.device-url")
+    @Value("${app.client.device-url}")
     private String baseUrl;
 
     @Async

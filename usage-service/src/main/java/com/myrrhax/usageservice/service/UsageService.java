@@ -49,7 +49,7 @@ public class UsageService {
     private final InfluxConnection influxConn;
     private final DeviceClient deviceClient;
     private final UserClient userClient;
-    private final KafkaTemplate<String, AlertingEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${app.consumption-interval:1}")
     private long energyConsumptionIntervalHours;
@@ -64,7 +64,6 @@ public class UsageService {
                 .addField("energyConsumed", energyUsageEvent.energyConsumed())
                 .time(energyUsageEvent.timestamp(), WritePrecision.MS);
         influx.getWriteApiBlocking().writePoint(influxConn.bucket(), influxConn.org(), point);
-        log.info("New energy usage event sent to influx for device: {}", energyUsageEvent.deviceId());
     }
 
     @Scheduled(cron = "*/10 * * * * *")
@@ -84,6 +83,7 @@ public class UsageService {
 
         fetchUserInfo(userIds, userThresholdsMap, userEmailsMap);
 
+        log.info("Users thresholds: {}", userThresholdsMap);
         // Check thresholds
         List<Long> alertedUsers = new ArrayList<>(userThresholdsMap.keySet());
 
@@ -178,8 +178,8 @@ public class UsageService {
         Instant now = Instant.now();
         Instant hourAgo = now.minus(passedHours, ChronoUnit.HOURS);
         String fluxQuery = String.format("""
-        from (bucket: %s)
-            |> range(start: time(v: %s), stop: time(v: %s))
+        from (bucket: "%s")
+            |> range(start: time(v: "%s"), stop: time(v: "%s"))
             |> filter(fn: (r) => r["_measurement"] == "energy_usage")
             |> filter(fn: (r) => r["_field"] == "energyConsumed")
             |> group(columns: ["deviceId"])
