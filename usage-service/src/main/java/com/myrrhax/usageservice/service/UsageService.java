@@ -7,11 +7,17 @@ import com.influxdb.client.write.Point;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.myrrhax.usageservice.client.DeviceClient;
+import com.myrrhax.usageservice.client.UserClient;
 import com.myrrhax.usageservice.config.properties.InfluxConnection;
+import com.myrrhax.usageservice.dto.UserDto;
+import com.myrrhax.usageservice.event.AlertingEvent;
 import com.myrrhax.usageservice.event.EnergyUsageEvent;
 import com.myrrhax.usageservice.model.DeviceEnergy;
+import io.reactivex.rxjava3.internal.functions.Functions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +41,16 @@ import java.util.stream.Collectors;
 @KafkaListener(topics = "energy-usage", containerFactory = "kafkaListenerContainerFactory")
 @RequiredArgsConstructor
 public class UsageService {
+    // ToDo Use MessageSource and save user preferred localization
+    private static final String THRESHOLD_EXCEEDED_MESSAGE_PATTERN = "Energy consumption threshold exceeded";
+
     private final InfluxDBClient influx;
     private final InfluxConnection influxConn;
     private final DeviceClient deviceClient;
+    private final UserClient userClient;
+
+    @Value("${app.consumption-interval:1}")
+    private long energyConsumptionIntervalHours;
 
     @KafkaHandler
     public void handleEnergyUsageEvent(EnergyUsageEvent energyUsageEvent) {
@@ -52,37 +66,12 @@ public class UsageService {
 
     @Scheduled(cron = "*/10 * * * * *")
     public void aggregateDeviceEnergyUsage() throws ExecutionException, InterruptedException {
-        Instant now = Instant.now();
-        Instant hourAgo = now.minus(1, ChronoUnit.HOURS);
-        String fluxQuery = String.format("""
-        from (bucket: %s)
-            |> range(start: time(v: %s), stop: time(v: %s))
-            |> filter(fn: (r) => r["_measurement"] == "energy_usage")
-            |> filter(fn: (r) => r["_field"] == "energyConsumed")
-            |> group(columns: ["deviceId"])
-            |> sum(column: "_value")
-        """, influxConn.bucket(), hourAgo.toString(), now);
-
-        QueryApi queryApi = influx.getQueryApi();
-        List<FluxTable> tables = queryApi.query(fluxQuery, influxConn.org());
-        List<DeviceEnergy> deviceEnergies = new ArrayList<>();
-
-        for (FluxTable table : tables) {
-            for (FluxRecord record: table.getRecords()) {
-                String deviceIdStr = (String) record.getValueByKey("deviceId");
-                double energyConsumed = record.getValueByKey("_value") instanceof Number value
-                        ? value.doubleValue()
-                        : 0.0;
-                deviceEnergies.add(DeviceEnergy.builder()
-                            .deviceId(Long.valueOf(Objects.requireNonNullElse(deviceIdStr, "-1")))
-                            .energyConsumed(energyConsumed)
-                            .build());
-            }
-        }
+        List<FluxTable> tables = getLastEnergyConsumptionsGrouped(energyConsumptionIntervalHours);
+        List<DeviceEnergy> deviceConsumptions = getDeviceConsumptions(tables);
 
         // ToDo: Add batching
         List<CompletableFuture<Void>> futures = new LinkedList<>();
-        for (DeviceEnergy deviceEnergy: deviceEnergies) {
+        for (DeviceEnergy deviceEnergy: deviceConsumptions) {
             futures.add(
                     deviceClient.getDeviceById(deviceEnergy.getDeviceId())
                         .exceptionally(e -> {
@@ -97,12 +86,97 @@ public class UsageService {
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .join();
-        deviceEnergies.removeIf(deviceEnergy -> deviceEnergy.getUserId() == null);
-        Map<Long, List<DeviceEnergy>> userDeviceEnergyMap = deviceEnergies.stream()
+        deviceConsumptions.removeIf(deviceEnergy -> deviceEnergy.getUserId() == null);
+        Map<Long, List<DeviceEnergy>> userDeviceEnergyMap = deviceConsumptions.stream()
                 .collect(Collectors.groupingBy(DeviceEnergy::getUserId));
 
         log.info("User energies: {}", userDeviceEnergyMap);
 
         // Get user's energy consumption threshold
+        List<Long> userIds = new ArrayList<>(userDeviceEnergyMap.keySet());
+        Map<Long, Double> userThresholdsMap = new HashMap<>();
+        Map<Long, String> userEmailsMap = new HashMap<>();
+
+        List<CompletableFuture<Optional<UserDto>>> userFetchFutures = new LinkedList<>();
+        for (Long userId: userIds) {
+            userFetchFutures.add(
+                    userClient.getUserById(userId)
+                            .exceptionally(e -> {
+                                log.error("Failed to fetch user with id {}", userId, e);
+                                return Optional.empty();
+                            })
+            );
+        }
+        CompletableFuture.allOf(userFetchFutures.toArray(new CompletableFuture[0]))
+                .join();
+
+        for (CompletableFuture<Optional<UserDto>> getUserTask: userFetchFutures) {
+            Optional<UserDto> userOpt = getUserTask.get();
+            if (userOpt.isEmpty()) {
+                continue;
+            }
+            UserDto user = userOpt.get();
+            if (!user.alerting()) {
+                continue;
+            }
+            userThresholdsMap.put(user.id(), user.energyAlertingThreshold());
+            userEmailsMap.put(user.id(), user.email());
+        }
+
+        // Check thresholds
+        List<Long> alertedUsers = new ArrayList<>(userThresholdsMap.keySet());
+
+        for (Long userId: alertedUsers) {
+            double threshold = userThresholdsMap.get(userId);
+            double consumedEnergy = userDeviceEnergyMap.get(userId).stream()
+                    .mapToDouble(DeviceEnergy::getEnergyConsumed)
+                    .sum();
+            if (consumedEnergy > threshold) {
+                log.info("ALERT: user {} has exceeded the energy threshold. Total consumption is {}, Threshold is {}",
+                        userId, threshold, consumedEnergy);
+                AlertingEvent event = new AlertingEvent(
+                        userId,
+                        THRESHOLD_EXCEEDED_MESSAGE_PATTERN,
+                        threshold,
+                        consumedEnergy,
+                        userEmailsMap.get(userId)
+                );
+            }
+        }
+    }
+
+    private static @NonNull List<DeviceEnergy> getDeviceConsumptions(List<FluxTable> tables) {
+        List<DeviceEnergy> deviceEnergies = new ArrayList<>();
+
+        for (FluxTable table : tables) {
+            for (FluxRecord record: table.getRecords()) {
+                String deviceIdStr = (String) record.getValueByKey("deviceId");
+                double energyConsumed = record.getValueByKey("_value") instanceof Number value
+                        ? value.doubleValue()
+                        : 0.0;
+                deviceEnergies.add(DeviceEnergy.builder()
+                            .deviceId(Long.valueOf(Objects.requireNonNullElse(deviceIdStr, "-1")))
+                            .energyConsumed(energyConsumed)
+                            .build());
+            }
+        }
+        return deviceEnergies;
+    }
+
+    private @NonNull List<FluxTable> getLastEnergyConsumptionsGrouped(long passedHours) {
+        Instant now = Instant.now();
+        Instant hourAgo = now.minus(passedHours, ChronoUnit.HOURS);
+        String fluxQuery = String.format("""
+        from (bucket: %s)
+            |> range(start: time(v: %s), stop: time(v: %s))
+            |> filter(fn: (r) => r["_measurement"] == "energy_usage")
+            |> filter(fn: (r) => r["_field"] == "energyConsumed")
+            |> group(columns: ["deviceId"])
+            |> sum(column: "_value")
+        """, influxConn.bucket(), hourAgo.toString(), now);
+
+        QueryApi queryApi = influx.getQueryApi();
+        List<FluxTable> tables = queryApi.query(fluxQuery, influxConn.org());
+        return tables;
     }
 }
