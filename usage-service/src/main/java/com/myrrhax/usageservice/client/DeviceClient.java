@@ -4,12 +4,14 @@ import com.myrrhax.usageservice.dto.DeviceDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
@@ -19,7 +21,8 @@ public class DeviceClient {
     @Value("app.client.device-url")
     private String baseUrl;
 
-    public Optional<DeviceDto> getDeviceById(Long deviceId) {
+    @Async
+    public CompletableFuture<Optional<DeviceDto>> getDeviceById(Long deviceId) {
         String uri = UriComponentsBuilder.fromUriString(baseUrl)
                 .path("/{deviceId}")
                 .buildAndExpand(Map.of("deviceId", deviceId))
@@ -27,6 +30,8 @@ public class DeviceClient {
 
         ResponseEntity<DeviceDto> response = restTemplate.getForEntity(uri, DeviceDto.class);
 
-        return Optional.ofNullable(response.getBody());
+        return CompletableFuture.completedFuture(
+                Optional.ofNullable(response.getBody())
+        );
     }
 }
