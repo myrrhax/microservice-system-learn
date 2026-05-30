@@ -4,3 +4,11 @@ server:
 spring:
   application:
     name: insight-service
+
+  ai:
+    google:
+      genai:
+        api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY}
+      chat:
+        options:
+          model: gemini-2.0-flash
