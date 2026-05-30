@@ -31,9 +31,15 @@ public class AlertService {
                 event.threshold(),
                 event.energyConsumed());
 
-        emailService.sendEmail(event.email(),
-                subject,
-                message,
-                event.userId());
+        try {
+            emailService.sendEmail(event.email(),
+                    subject,
+                    message,
+                    event.userId());
+        } catch (Exception e) {
+            log.error("Failed to process event", e);
+
+            throw e;
+        }
     }
 }
