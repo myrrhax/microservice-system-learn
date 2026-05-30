@@ -1,0 +1,3 @@
+app:
+  client:
+    usage-url: http://localhost:8083/api/v1/usage

@@ -22,7 +22,7 @@ extra["springAiVersion"] = "2.0.0-M8"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.ai:spring-ai-starter-model-deepseek")
+    implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
