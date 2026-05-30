@@ -37,7 +37,7 @@ public class KafkaBeans {
         config.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         config.put(JacksonJsonDeserializer.TYPE_MAPPINGS,
-                "alerting-event:com.myrrhax.alertsservice.event.AlertingEvent");
+                "alerting-event:com.myrrhax.alertservice.event.AlertingEvent");
 
         var deserializer = new JacksonJsonDeserializer<AlertingEvent>();
         var errorHandlingDeserializer = new ErrorHandlingDeserializer<>(deserializer);
@@ -54,7 +54,7 @@ public class KafkaBeans {
         config.put(ProducerConfig.ACKS_CONFIG, "all");
         config.put(ProducerConfig.RETRIES_CONFIG, 10);
         config.put(JacksonJsonSerializer.TYPE_MAPPINGS,
-                "alerting-event:com.myrrhax.usageservice.event.AlertingEvent");
+                "alerting-event:com.myrrhax.alertservice.event.AlertingEvent");
 
         var serializer = new JacksonJsonSerializer<>();
         serializer.configure(config, false);
