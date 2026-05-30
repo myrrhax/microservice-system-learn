@@ -208,7 +208,7 @@ public class UsageService {
                         dto.type(),
                         dto.location(),
                         dto.userId(),
-                        dto.energyConsumed()))
+                        Objects.requireNonNullElse(dto.energyConsumed(), 0.0)))
                 .toList();
         Instant now = Instant.now();
         Instant startTime = now.minus(days, ChronoUnit.DAYS);
