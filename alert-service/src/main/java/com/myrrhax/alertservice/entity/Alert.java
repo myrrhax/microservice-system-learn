@@ -5,8 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -15,10 +14,10 @@ import java.time.OffsetDateTime;
 public class Alert {
     private Long id;
     private Long userId;
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
     private boolean sent;
 
-    public Alert(Long userId, OffsetDateTime createdAt, boolean sent) {
+    public Alert(Long userId, Instant createdAt, boolean sent) {
         this.userId = userId;
         this.createdAt = createdAt;
         this.sent = sent;

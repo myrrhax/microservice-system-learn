@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class JdbcAlertRepository implements AlertRepository {
                                 // ToDo set user timezone
                                 "createdAt", Objects.requireNonNullElse(
                                         alert.getCreatedAt(),
-                                        OffsetDateTime.now(ZoneId.of("Europe/Moscow"))
+                                        Instant.now()
                                 )
                         )
                 ),
@@ -104,7 +105,7 @@ public class JdbcAlertRepository implements AlertRepository {
             return new Alert(
                     rs.getLong("id"),
                     rs.getLong("user_id"),
-                    rs.getObject("created_at", OffsetDateTime.class),
+                    rs.getDate("created_at").toInstant(),
                     rs.getBoolean("sent")
             );
         }

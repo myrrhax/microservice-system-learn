@@ -10,6 +10,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
@@ -46,7 +47,7 @@ public class EmailService {
 
     private static @NonNull Alert buildAlertEntity(Long userId, boolean sent) {
         return new Alert(userId,
-                OffsetDateTime.now(ZoneId.of("Europe/Moscow")),
+                Instant.now(),
                 sent);
     }
 }
