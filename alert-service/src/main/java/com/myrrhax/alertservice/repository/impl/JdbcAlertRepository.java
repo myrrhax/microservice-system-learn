@@ -83,7 +83,10 @@ public class JdbcAlertRepository implements AlertRepository {
                                 "userId", alert.getUserId(),
                                 "sent", alert.isSent(),
                                 // ToDo set user timezone
-                                "createdAt", OffsetDateTime.now(ZoneId.of("Europe/Moscow"))
+                                "createdAt", Objects.requireNonNullElse(
+                                        alert.getCreatedAt(),
+                                        OffsetDateTime.now(ZoneId.of("Europe/Moscow"))
+                                )
                         )
                 ),
                 keyHolder,
