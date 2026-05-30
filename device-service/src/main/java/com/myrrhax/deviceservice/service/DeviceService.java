@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -52,5 +54,12 @@ public class DeviceService {
     public void deleteDevice(Long id) {
         Device device = getDevice(id);
         deviceRepository.delete(device);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeviceDto> getAllDevicesByUserId(Long userId) {
+        return deviceRepository.findAllByUserId(userId).stream()
+                .map(deviceMapper::toDto)
+                .toList();
     }
 }

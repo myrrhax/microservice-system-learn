@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("api/v1/device")
 @RequiredArgsConstructor
@@ -49,5 +51,12 @@ public class DeviceController {
         deviceService.deleteDevice(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("user/{userId:\\d+}")
+    public ResponseEntity<List<DeviceDto>> getAllDevicesByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(
+                deviceService.getAllDevicesByUserId(userId)
+        );
     }
 }
