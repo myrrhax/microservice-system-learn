@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class InsightController {
     private final InsightService insightService;
 
-//    @GetMapping("saving-tips/{userId:\\d+}")
-//    public ResponseEntity<InsightDto> getSavingTips(@PathVariable Long userId) {
-//        InsightDto insight = insightService.getSavingTips(userId);
-//
-//        return ResponseEntity.ok(insight);
-//    }
+    @GetMapping("saving-tips/{userId:\\d+}")
+    public ResponseEntity<InsightDto> getSavingTips(@PathVariable Long userId) {
+        InsightDto insight = insightService.getSavingTips(userId);
+
+        return ResponseEntity.ok(insight);
+    }
 
     @GetMapping("overview/{userId:\\d+}")
     public ResponseEntity<InsightDto> getOverview(@PathVariable Long userId) {

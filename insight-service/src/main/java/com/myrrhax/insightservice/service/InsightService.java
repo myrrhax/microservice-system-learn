@@ -52,4 +52,31 @@ public class InsightService {
 
         return new InsightDto(userId, response.getResult().getOutput().getText(), totalUsage);
     }
+
+    public InsightDto getSavingTips(Long userId) {
+        UsageDto usageData = usageClient.getXDaysUsageForUser(userId, overviewDays)
+                .orElseThrow();
+
+        double totalUsage = usageData.devices().stream()
+                .mapToDouble(DeviceDto::energyConsumed)
+                .sum();
+
+        log.info("User {} total energy consumption is {}", userId, totalUsage);
+
+        // Call gemini
+        String prompt = new StringBuilder()
+                .append("This is my total consumptions over the past 3 days.")
+                .append("How can I reduce my energy consumption? How does it compare to average households?")
+                .append("Total energy used: ")
+                .append(totalUsage)
+                .toString();
+
+        ChatResponse response = chatModel.call(
+                Prompt.builder()
+                        .content(prompt)
+                        .build()
+        );
+
+        return new InsightDto(userId, response.getResult().getOutput().getText(), totalUsage);
+    }
 }
