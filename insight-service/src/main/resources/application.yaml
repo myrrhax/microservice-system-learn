@@ -9,6 +9,6 @@ spring:
     google:
       genai:
         api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY}
-      chat:
-        options:
-          model: gemini-3.1-flash-lite
+        chat:
+          options:
+            model: gemini-3.1-flash-lite
