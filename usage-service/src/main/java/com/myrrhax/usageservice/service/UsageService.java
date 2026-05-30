@@ -9,11 +9,13 @@ import com.influxdb.query.FluxTable;
 import com.myrrhax.usageservice.client.DeviceClient;
 import com.myrrhax.usageservice.client.UserClient;
 import com.myrrhax.usageservice.config.properties.InfluxConnection;
+import com.myrrhax.usageservice.dto.DeviceDto;
+import com.myrrhax.usageservice.dto.UsageDto;
 import com.myrrhax.usageservice.dto.UserDto;
 import com.myrrhax.usageservice.event.AlertingEvent;
 import com.myrrhax.usageservice.event.EnergyUsageEvent;
+import com.myrrhax.usageservice.model.Device;
 import com.myrrhax.usageservice.model.DeviceEnergy;
-import io.reactivex.rxjava3.internal.functions.Functions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -186,6 +189,105 @@ public class UsageService {
             |> sum(column: "_value")
         """, influxConn.bucket(), hourAgo.toString(), now);
 
+        QueryApi queryApi = influx.getQueryApi();
+
+        return queryApi.query(fluxQuery, influxConn.org());
+    }
+
+    public UsageDto getXDaysUsageForUser(Long userId, int days) {
+        log.info("Getting usage for userId {} over past {} days", userId, days);
+
+        List<DeviceDto> deviceDtos = deviceClient.getAllDevicesForUser(userId);
+        if (deviceDtos.isEmpty()) {
+            return new UsageDto(userId, deviceDtos);
+        }
+
+        List<Device> devices = deviceDtos.stream()
+                .map(dto -> new Device(dto.id(),
+                        dto.name(),
+                        dto.type(),
+                        dto.location(),
+                        dto.userId(),
+                        dto.energyConsumed()))
+                .toList();
+        Instant now = Instant.now();
+        Instant startTime = now.minus(days, ChronoUnit.DAYS);
+        Map<Long, Double> deviceConsumptions = getDeviceConsumptions(startTime, now, devices);
+
+        List<DeviceDto> result = new ArrayList<>(devices.size());
+        for (Device device : devices) {
+            device.setEnergyConsumed(deviceConsumptions.getOrDefault(device.getId(), 0.0));
+
+            result.add(new DeviceDto(
+                    device.getId(),
+                    device.getName(),
+                    device.getType(),
+                    device.getLocation(),
+                    device.getUserId(),
+                    device.getEnergyConsumed()
+            ));
+        }
+
+        return new UsageDto(userId, result);
+    }
+
+    private Map<Long, Double> getDeviceConsumptions(Instant startTime, Instant now, List<Device> devices) {
+        Map<Long, Double> aggregatedMap = new HashMap<>();
+
+        try {
+            String devicesFilter = buildDeviceIdsFilter(devices);
+            List<FluxTable> tables = getUserDeviceEnergyConsumptionsForDevices(startTime, now, devicesFilter);
+
+            for (FluxTable table: tables) {
+                for (FluxRecord record: table.getRecords()) {
+                    String deviceIdStr = Objects.requireNonNullElse(record.getValueByKey("deviceId"), "-1")
+                            .toString();
+                    if (deviceIdStr.equals("-1")) {
+                        continue;
+                    }
+
+                    double energyConsumed = record.getValueByKey("_value") instanceof Number value
+                            ? value.doubleValue()
+                            : 0.0;
+
+                    try {
+                        Long deviceId = Long.valueOf(deviceIdStr);
+                        aggregatedMap.put(deviceId, aggregatedMap.getOrDefault(deviceId, 0.0) + energyConsumed);
+                    } catch (NumberFormatException e) {
+                        log.warn("Failed to parse deviceId from flux record: {}", deviceIdStr);
+                    }
+                }
+            }
+
+            return aggregatedMap;
+        } catch (Exception e) {
+            log.error("Failed to fetch user devices", e);
+
+            return Collections.emptyMap();
+        }
+    }
+
+    private static @NonNull String buildDeviceIdsFilter(List<Device> devices) {
+        List<String> deviceIdsStrings = devices.stream()
+                .map(Device::getId)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .toList();
+        return deviceIdsStrings.stream()
+                .map(idStr -> String.format("r[\"deviceId\"] == \"%s\"", idStr))
+                .collect(Collectors.joining(" or "));
+    }
+
+    private @NonNull List<FluxTable> getUserDeviceEnergyConsumptionsForDevices(Instant startTime, Instant endTime, String filter) {
+        String fluxQuery = String.format("""
+                from(bucket: "%s")
+                    |> range(start: time(v: "%s"), stop: time(v: "%s"))
+                    |> filter(fn: (r) => r["_measurement"] == "energy_usage")
+                    |> filter(fn: (r) => r["_field"] == "energyConsumed")
+                    |> filter(fn: (r) => %s)
+                    |> group(columns: ["deviceId"])
+                    |> sum(column: "_value")
+                """, influxConn.bucket(), startTime, endTime, filter);
         QueryApi queryApi = influx.getQueryApi();
 
         return queryApi.query(fluxQuery, influxConn.org());
