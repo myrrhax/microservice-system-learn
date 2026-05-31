@@ -2,6 +2,9 @@ server:
   port: 9000
 
 spring:
+  application:
+    name: api-gateway
+
   cloud:
     gateway:
       server:
@@ -13,27 +16,27 @@ spring:
                 - Path=/api/v1/user/**
 
             - id: device-service
-              uri: http://localhost:8081
+              uri: lb://DEVICE-SERVICE
               predicates:
                 - Path=/api/v1/device/**
 
             - id: ingestion-service
-              uri: http://localhost:8082
+              uri: lb://INGESTION-SERVICE
               predicates:
                 - Path=/api/v1/ingestion/**
 
             - id: usage-service
-              uri: http://localhost:8083
+              uri: lb://USAGE-SERVICE
               predicates:
                 - Path=/api/v1/usage
 
             - id: alert-service
-              uri: http://localhost:8084
+              uri: lb://ALERT-SERVICE
               predicates:
                 - Path=/api/v1/alert
 
             - id: insight-service
-              uri: http://localhost:8085
+              uri: lb://INSIGHT-SERVICE
               predicates:
                 - Path=/api/v1/insight
 

@@ -13,5 +13,10 @@ spring:
       connection-init-sql: CREATE SCHEMA IF NOT EXISTS microservices_schema
       connection-timeout: 10000
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9999/eureka/
+
 server:
   port: 8084

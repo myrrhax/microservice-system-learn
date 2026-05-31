@@ -8,6 +8,11 @@ spring:
   kafka:
     bootstrap-servers: localhost:9094
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9999/eureka/
+
 app:
   simulation:
     requests-per-interval: 50

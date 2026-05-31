@@ -19,10 +19,12 @@ repositories {
 }
 
 extra["springAiVersion"] = "2.0.0-M8"
+extra["springCloudVersion"] = "2025.1.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -34,6 +36,7 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom("org.springframework.ai:spring-ai-bom:${property("springAiVersion")}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
     }
 }
 

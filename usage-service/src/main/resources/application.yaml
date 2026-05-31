@@ -10,6 +10,11 @@ spring:
     consumer:
       group-id: usage-service
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9999/eureka/
+
 app:
   influx:
     url: http://localhost:8072
