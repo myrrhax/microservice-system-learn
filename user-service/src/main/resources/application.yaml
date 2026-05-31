@@ -21,3 +21,8 @@ spring:
         jdbc:
           batch_size: 10
         order_inserts: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9999/eureka/
