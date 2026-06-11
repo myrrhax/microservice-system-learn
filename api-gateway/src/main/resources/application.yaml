@@ -70,6 +70,13 @@ spring:
                     name: insightServiceCircuitBreaker
                     fallbackUri: forward:/fallback
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8091/realms/microservices-system
+          jwk-set-uri: http://localhost:8091/realms/microservices-system/protocol/openid-connect/certs
+
 resilience4j:
   circuitbreaker:
     configs:

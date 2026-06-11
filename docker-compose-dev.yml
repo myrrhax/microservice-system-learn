@@ -12,6 +12,43 @@ services:
     volumes:
       - db-data:/var/lib/postgresql
 
+  keycloak-db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: keycloak-db
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-keycloak-data:/var/lib/postgresql
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak-db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8091:8080"
+    volumes:
+      - ./config/keycloak/realms:/opt/keycloak/data/import
+    depends_on:
+      - keycloak-db
+
   kafka:
     image: confluentinc/cp-kafka:7.8.0
     container_name: kafka
@@ -73,3 +110,4 @@ services:
 
 volumes:
   db-data:
+  db-keycloak-data:
