@@ -14,31 +14,105 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/api/v1/user/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: userServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
 
             - id: device-service
               uri: lb://DEVICE-SERVICE
               predicates:
                 - Path=/api/v1/device/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: deviceServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
 
             - id: ingestion-service
               uri: lb://INGESTION-SERVICE
               predicates:
                 - Path=/api/v1/ingestion/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: ingestionServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
 
             - id: usage-service
               uri: lb://USAGE-SERVICE
               predicates:
                 - Path=/api/v1/usage
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: usageServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
 
             - id: alert-service
               uri: lb://ALERT-SERVICE
               predicates:
                 - Path=/api/v1/alert
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: alertServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
 
             - id: insight-service
               uri: lb://INSIGHT-SERVICE
               predicates:
                 - Path=/api/v1/insight
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: insightServiceCircuitBreaker
+                    fallbackUri: forward:/fallback
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 4
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+        waitDurationInOpenState: 5s
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+    instances:
+      userServiceCircuitBreaker:
+        baseConfig: default
+        failureRateThreshold: 20
+
+      deviceServiceCircuitBreaker:
+        baseConfig: default
+
+      ingestionServiceCircuitBreaker:
+        baseConfig: default
+
+      usageServiceCircuitBreaker:
+        baseConfig: default
+
+      alertServiceCircuitBreaker:
+        baseConfig: default
+
+      insightServiceCircuitBreaker:
+        baseConfig: default
+
+management:
+  health:
+    circuitbreakers.enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
 
 eureka:
   client:
