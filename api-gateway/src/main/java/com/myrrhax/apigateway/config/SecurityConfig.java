@@ -11,10 +11,8 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
         return http
-                .authorizeExchange(exchange ->
-                        exchange.anyExchange().authenticated())
-                .oauth2ResourceServer(resourceServer ->
-                        resourceServer.jwt(Customizer.withDefaults()))
+                .authorizeExchange(exchange -> exchange.anyExchange().permitAll())
+                .oauth2ResourceServer(config -> config.jwt(Customizer.withDefaults()))
                 .build();
     }
 }

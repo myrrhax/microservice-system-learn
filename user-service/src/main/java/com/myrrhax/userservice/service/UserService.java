@@ -1,7 +1,7 @@
 package com.myrrhax.userservice.service;
 
 import com.myrrhax.userservice.dto.UserDto;
-import com.myrrhax.userservice.dto.request.CreateUserRequest;
+import com.myrrhax.userservice.dto.CreateUserDto;
 import com.myrrhax.userservice.dto.request.UpdateUserRequest;
 import com.myrrhax.userservice.entity.User;
 import com.myrrhax.userservice.exception.ApplicationException;
@@ -21,7 +21,7 @@ public class UserService {
     private final UserMapper userMapper;
 
     @Transactional
-    public UserDto createUser(CreateUserRequest dto) {
+    public UserDto createUser(CreateUserDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
             log.warn("User with email {} already exists", dto.email());
 

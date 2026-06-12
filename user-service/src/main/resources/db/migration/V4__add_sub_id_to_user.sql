@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD COLUMN sub_id VARCHAR(255) NOT NULL DEFAULT 'no_sub_id';

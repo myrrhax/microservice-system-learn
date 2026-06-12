@@ -24,6 +24,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "sub_id")
+    private String subId;
+
     private String name;
 
     private String surname;
