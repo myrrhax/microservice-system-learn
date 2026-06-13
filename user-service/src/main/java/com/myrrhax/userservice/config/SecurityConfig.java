@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/user").hasRole("USER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/user").hasRole("USER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/user/me").authenticated()
-                        .requestMatchers("/api/v1/user").hasAuthority("SCOPE_user")
+                        .requestMatchers("/api/v1/user").hasAuthority("SCOPE_user:read")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(config -> config.jwt(Customizer.withDefaults()))
                 .build();
