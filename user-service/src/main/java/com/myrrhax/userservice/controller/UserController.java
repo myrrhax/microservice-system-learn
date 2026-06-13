@@ -53,10 +53,17 @@ public class UserController {
         );
     }
 
-    @GetMapping("{id}")
+    @GetMapping("{id:\\d+}")
     public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(
                 userService.getUser(id)
+        );
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<UserDto> getUserBySubId(@PathVariable String id) {
+        return ResponseEntity.ok(
+                userService.getUserBySubId(id)
         );
     }
 
