@@ -16,11 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    @Transactional
     public UserDto createUser(CreateUserDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
             log.warn("User with email {} already exists", dto.email());
@@ -39,7 +39,6 @@ public class UserService {
         return userMapper.toDto(getUserEntity(id));
     }
 
-    @Transactional
     public UserDto updateUser(Long id, UpdateUserRequest dto) {
         User user = getUserEntity(id);
 
@@ -60,5 +59,12 @@ public class UserService {
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserBySubId(String subId) {
+        return userRepository.findBySubId(subId)
+                .map(userMapper::toDto)
+                .orElseThrow(UserNotFoundException::new);
     }
 }
