@@ -1,10 +1,13 @@
 package com.myrrhax.deviceservice.service;
 
+import com.myrrhax.deviceservice.client.UserClient;
+import com.myrrhax.deviceservice.dto.CreateDeviceDto;
 import com.myrrhax.deviceservice.dto.DeviceDto;
-import com.myrrhax.deviceservice.dto.request.CreateDeviceRequest;
+import com.myrrhax.deviceservice.dto.UserDto;
 import com.myrrhax.deviceservice.dto.request.UpdateDeviceRequest;
 import com.myrrhax.deviceservice.entity.Device;
 import com.myrrhax.deviceservice.exception.DeviceNotFoundException;
+import com.myrrhax.deviceservice.exception.UserNotFoundException;
 import com.myrrhax.deviceservice.mapper.DeviceMapper;
 import com.myrrhax.deviceservice.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DeviceService {
+    private final UserClient userClient;
     private final DeviceRepository deviceRepository;
     private final DeviceMapper deviceMapper;
 
@@ -32,8 +36,10 @@ public class DeviceService {
     }
 
     @Transactional
-    public DeviceDto createDevice(CreateDeviceRequest deviceDto) {
-        Device device = deviceMapper.toEntity(deviceDto);
+    public DeviceDto createDevice(CreateDeviceDto deviceDto) {
+        UserDto user = userClient.getUserBySubId(deviceDto.userSubId())
+                .orElseThrow(UserNotFoundException::new);
+        Device device = deviceMapper.toEntity(deviceDto, user.id());
         Device savedDevice = deviceRepository.save(device);
 
         return deviceMapper.toDto(savedDevice);

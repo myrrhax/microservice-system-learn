@@ -1,11 +1,14 @@
 package com.myrrhax.deviceservice.controller;
 
+import com.myrrhax.deviceservice.dto.CreateDeviceDto;
 import com.myrrhax.deviceservice.dto.DeviceDto;
 import com.myrrhax.deviceservice.dto.request.CreateDeviceRequest;
 import com.myrrhax.deviceservice.dto.request.UpdateDeviceRequest;
 import com.myrrhax.deviceservice.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,9 +34,17 @@ public class DeviceController {
     }
 
     @PostMapping
-    public ResponseEntity<DeviceDto> createDevice(@RequestBody CreateDeviceRequest deviceDto) {
+    public ResponseEntity<DeviceDto> createDevice(@AuthenticationPrincipal Jwt jwt,
+                                                  @RequestBody CreateDeviceRequest deviceDto) {
         return ResponseEntity.ok(
-                deviceService.createDevice(deviceDto)
+                deviceService.createDevice(
+                        new CreateDeviceDto(
+                                deviceDto.name(),
+                                deviceDto.type(),
+                                deviceDto.location(),
+                                jwt.getSubject()
+                        )
+                )
         );
     }
 
