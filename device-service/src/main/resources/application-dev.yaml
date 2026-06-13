@@ -28,7 +28,13 @@ spring:
             provider: keycloak
             client-id: device-service
             client-secret: guwl94Mnwsah2vFYx3R21IZG3BeF4Fu6
+            authorization-grant-type: client_credentials
             scope:
               - openid
               - microprofile-jwt
               - user:read
+
+app:
+  clients:
+    user:
+      base-url: http://localhost:9000/api/v1/user
