@@ -16,3 +16,19 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8091/realms/microservices-system
+
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8091/realms/microservices-system
+            user-name-attribute: preferred_username
+
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: device-service
+            client-secret: guwl94Mnwsah2vFYx3R21IZG3BeF4Fu6
+            scope:
+              - openid
+              - microprofile-jwt
+              - user:read
