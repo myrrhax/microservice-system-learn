@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface DeviceRepository extends CrudRepository<Device, Long> {
     List<Device> findAllByUserId(Long userId);
+    boolean existsByIdAndUserId(Long id, Long userId);
 }

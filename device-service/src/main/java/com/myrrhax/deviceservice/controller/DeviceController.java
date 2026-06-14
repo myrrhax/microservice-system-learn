@@ -7,6 +7,7 @@ import com.myrrhax.deviceservice.dto.request.UpdateDeviceRequest;
 import com.myrrhax.deviceservice.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,6 +28,7 @@ public class DeviceController {
     private final DeviceService deviceService;
 
     @GetMapping("{id}")
+    @PreAuthorize("@deviceAccessManager.hasAccessToDevice(authentication, #id)")
     public ResponseEntity<DeviceDto> getDevice(@PathVariable Long id) {
         return ResponseEntity.ok(
                 deviceService.findById(id)
@@ -49,6 +51,7 @@ public class DeviceController {
     }
 
     @PutMapping("{id}")
+    @PreAuthorize("@deviceAccessManager.hasAccessToDevice(authentication, #id)")
     public ResponseEntity<DeviceDto> updateDevice(@PathVariable Long id,
                                                   @RequestBody UpdateDeviceRequest deviceDto) {
         return ResponseEntity.ok(
@@ -58,6 +61,7 @@ public class DeviceController {
 
 
     @DeleteMapping("{id}")
+    @PreAuthorize("@deviceAccessManager.hasAccessToDevice(authentication, #id)")
     public ResponseEntity<Void> deleteDevice(@PathVariable Long id) {
         deviceService.deleteDevice(id);
 
