@@ -27,6 +27,8 @@ extra["springCloudVersion"] = "2025.1.1"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-kafka")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
     implementation("org.springframework.boot:spring-boot-starter-json")

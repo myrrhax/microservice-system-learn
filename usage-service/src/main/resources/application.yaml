@@ -10,6 +10,30 @@ spring:
     consumer:
       group-id: usage-service
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8091/realms/microservices-system
+
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8091/realms/microservices-system
+            user-name-attribute: preferred_username
+
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: usage-service
+            client-secret: TQoYikeRlAFMLOB6MeLGkeBQbCcBxJsa
+            authorization-grant-type: client_credentials
+            scope:
+              - openid
+              - microprofile-jwt
+              - user:read
+              - device:read:any
+
 eureka:
   client:
     service-url:
