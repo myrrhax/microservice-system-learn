@@ -6,6 +6,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
@@ -36,19 +43,43 @@ public class ClientBeans {
         return new DeviceClient(restTemplate);
     }
 
+    @Bean
+    public OAuth2AuthorizedClientManager authorizedClientManager(
+            ClientRegistrationRepository clientRegistrationRepository,
+            OAuth2AuthorizedClientService authorizedClientService
+    ) {
+        OAuth2AuthorizedClientProvider authorizedClientProvider =
+                OAuth2AuthorizedClientProviderBuilder.builder()
+                        .clientCredentials()
+                        .build();
+
+        AuthorizedClientServiceOAuth2AuthorizedClientManager manager =
+                new AuthorizedClientServiceOAuth2AuthorizedClientManager(
+                        clientRegistrationRepository,
+                        authorizedClientService
+                );
+
+        manager.setAuthorizedClientProvider(authorizedClientProvider);
+
+        return manager;
+    }
 
     @Bean
     public OAuth2ClientHttpRequestInterceptor keycloakClientCredentialsInterceptor(
-            ClientRegistrationRepository clientRegistrationRepository,
-            OAuth2AuthorizedClientRepository authorizedClientRepository
+            OAuth2AuthorizedClientManager authorizedClientManager
     ) {
-        OAuth2ClientHttpRequestInterceptor interceptor = new OAuth2ClientHttpRequestInterceptor(
-                new DefaultOAuth2AuthorizedClientManager(
-                        clientRegistrationRepository,
-                        authorizedClientRepository
+        OAuth2ClientHttpRequestInterceptor interceptor =
+                new OAuth2ClientHttpRequestInterceptor(authorizedClientManager);
+
+        interceptor.setClientRegistrationIdResolver(request -> "keycloak");
+
+        interceptor.setPrincipalResolver(request ->
+                new UsernamePasswordAuthenticationToken(
+                        "usage-service",
+                        "N/A",
+                        AuthorityUtils.NO_AUTHORITIES
                 )
         );
-        interceptor.setClientRegistrationIdResolver(_ -> "keycloak");
 
         return interceptor;
     }

@@ -24,7 +24,7 @@ public class RestTemplateUserClient implements UserClient {
     @Override
     public Optional<UserDto> getUserBySubId(String subId) {
         try {
-            ResponseEntity<UserDto> user = userRestTemplate.getForEntity("/" + subId, UserDto.class);
+            ResponseEntity<UserDto> user = userRestTemplate.getForEntity("/sub/" + subId, UserDto.class);
             if (user.getStatusCode().is2xxSuccessful() && user.hasBody()) {
                 return Optional.of(Objects.requireNonNull(user.getBody()));
             }

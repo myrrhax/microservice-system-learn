@@ -60,7 +60,7 @@ public class UserController {
         );
     }
 
-    @GetMapping("{id}")
+    @GetMapping("sub/{id}")
     public ResponseEntity<UserDto> getUserBySubId(@PathVariable String id) {
         return ResponseEntity.ok(
                 userService.getUserBySubId(id)
