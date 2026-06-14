@@ -28,7 +28,10 @@ public class DeviceController {
     private final DeviceService deviceService;
 
     @GetMapping("{id}")
-    @PreAuthorize("@deviceAccessManager.hasAccessToDevice(authentication, #id)")
+    @PreAuthorize("""
+            hasAuthority('SCOPE_device:read:any') or
+            @deviceAccessManager.hasAccessToDevice(authentication, #id)
+            """)
     public ResponseEntity<DeviceDto> getDevice(@PathVariable Long id) {
         return ResponseEntity.ok(
                 deviceService.findById(id)
@@ -69,6 +72,7 @@ public class DeviceController {
     }
 
     @GetMapping("user/{userId:\\d+}")
+    @PreAuthorize("hasAuthority('SCOPE_device:read:any')")
     public ResponseEntity<List<DeviceDto>> getAllDevicesByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(
                 deviceService.getAllDevicesByUserId(userId)

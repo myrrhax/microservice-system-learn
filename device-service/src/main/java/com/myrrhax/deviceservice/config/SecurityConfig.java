@@ -26,11 +26,16 @@ public class SecurityConfig {
                 .sessionManagement(config ->
                         config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers(HttpMethod.POST, "/api/v1/device").hasAuthority("SCOPE_device:modify")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/device/**").hasAuthority("SCOPE_device:modify")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/device/**").hasAuthority("SCOPE_device:modify")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/device/**").hasAuthority("SCOPE_device:read")
-                        .anyRequest().authenticated())
+                        .requestMatchers(HttpMethod.POST, "/api/v1/device")
+                            .hasAuthority("SCOPE_device:modify")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/device/**")
+                            .hasAuthority("SCOPE_device:modify")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/device/**")
+                            .hasAuthority("SCOPE_device:modify")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/device/**")
+                            .hasAnyAuthority("SCOPE_device:read", "SCOPE_device:read:any")
+                        .anyRequest()
+                            .authenticated())
                 .oauth2ResourceServer(resourceServer ->
                         resourceServer.jwt(Customizer.withDefaults()))
                 .build();
